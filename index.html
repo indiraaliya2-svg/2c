@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ular Tangga Gotong Royong</title>
-  <script src="/_sdk/element_sdk.js"></script>
+  <!-- Link SDK yang diperbaiki: Menggunakan script publik agar bisa jalan di GitHub -->
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet">
@@ -42,7 +42,6 @@ html, body { height: 100%; margin: 0; }
 .score-bar { transition: width 0.5s ease; }
 </style>
   <style>body { box-sizing: border-box; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full overflow-auto" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);">
   <div id="app" class="h-full w-full flex flex-col items-center p-3 gap-3">
@@ -143,19 +142,15 @@ function getAudio() { if (!audioCtx) audioCtx = new AudioCtx(); return audioCtx;
 function playTone(freq, dur, type='square', vol=0.15) {
   try {
     const ctx = getAudio();
-    if (!ctx) return;
-    const now = ctx.currentTime;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
     o.type = type;
-    o.frequency.setValueAtTime(freq, now);
-    g.gain.setValueAtTime(vol, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.start(now);
-    o.stop(now + dur);
-  } catch(e) { console.log('Audio error:', e); }
+    o.frequency.value = freq;
+    g.gain.value = vol;
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime + dur);
+  } catch(e) {}
 }
 
 function sfxDice() { for(let i=0;i<6;i++) setTimeout(()=>playTone(200+i*50, 0.05, 'square', 0.1), i*40); }
@@ -211,10 +206,10 @@ const PLAYERS_DEF = [
 
 const CELL_COLORS = [
   '#fef3c7','#dbeafe','#dcfce7','#fce7f3','#e0e7ff','#fef9c3',
-  '#cffafe','#f3e8ff','#ffe4e6','#d1fae5','#fefce8','#fecdd3',
-  '#fed7aa','#fda34b','#fb923c','#f97316','#ea580c','#c2410c',
-  '#dcfce7','#bbf7d0','#86efac','#65a30d','#84cc16','#a3e635',
-  '#e0e7ff','#c7d2fe','#a5b4fc','#818cf8','#6366f1','#4f46e5',
+  '#cffafe','#f3e8ff','#ffe4e6','#d1fae5','#fef3c7','#dbeafe',
+  '#dcfce7','#fce7f3','#e0e7ff','#fef9c3','#cffafe','#f3e8ff',
+  '#ffe4e6','#d1fae5','#fef3c7','#dbeafe','#dcfce7','#fce7f3',
+  '#e0e7ff','#fef9c3','#cffafe','#f3e8ff','#ffe4e6','#d1fae5'
 ];
 
 let selectedPlayers = new Set();
@@ -225,49 +220,6 @@ let ladders = {};
 let questions = [];
 let isAnimating = false;
 let gameStarted = false;
-
-// Config
-const defaultConfig = {
-  game_title: 'Ular Tangga Gotong Royong',
-  background_color: '#667eea',
-  surface_color: '#ffffff',
-  text_color: '#4a1d96',
-  primary_action_color: '#f59e0b',
-  secondary_action_color: '#8b5cf6',
-  font_family: 'Nunito',
-  font_size: 16,
-};
-
-function applyConfig(config) {
-  const t = config.game_title || defaultConfig.game_title;
-  document.getElementById('game-title').textContent = `🤝 ${t} 🤝`;
-  const font = config.font_family || defaultConfig.font_family;
-  document.body.style.fontFamily = `${font}, Nunito, sans-serif`;
-  const bg = config.background_color || defaultConfig.background_color;
-  document.body.style.background = `linear-gradient(135deg, ${bg} 0%, #764ba2 50%, #f093fb 100%)`;
-  const baseSize = config.font_size || defaultConfig.font_size;
-  document.getElementById('game-title').style.fontSize = `${baseSize * 1.5}px`;
-}
-
-window.elementSdk.init({
-  defaultConfig,
-  onConfigChange: async (config) => applyConfig(config),
-  mapToCapabilities: (config) => ({
-    recolorables: [
-      { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
-      { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
-      { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
-      { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: (v) => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); } },
-      { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } },
-    ],
-    borderables: [],
-    fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
-    fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); } },
-  }),
-  mapToEditPanelValues: (config) => new Map([
-    ['game_title', config.game_title || defaultConfig.game_title],
-  ]),
-});
 
 function togglePlayer(idx) {
   const el = document.querySelectorAll('.player-selector')[idx];
@@ -297,23 +249,17 @@ function shuffle(arr) {
 
 function generateSnakesAndLadders() {
   snakes = {}; ladders = {};
-  // Pick random positions for snakes and ladders
   const available = [];
   for (let i = 3; i <= 29; i++) available.push(i);
   const shuffled = shuffle(available);
-  
-  // 4 snakes: head > tail
   for (let i = 0; i < 4; i++) {
     const head = shuffled[i];
-    // tail is lower
     const minTail = Math.max(2, head - 12);
     const maxTail = head - 3;
     if (maxTail < minTail) continue;
     const tail = minTail + Math.floor(Math.random() * (maxTail - minTail + 1));
     snakes[head] = tail;
   }
-  
-  // 4 ladders: bottom < top
   for (let i = 4; i < 8; i++) {
     const bottom = shuffled[i];
     if (snakes[bottom]) continue;
@@ -326,27 +272,14 @@ function generateSnakesAndLadders() {
   }
 }
 
-function getCellPos(num) {
-  // Board layout: row 0 = bottom (cells 1-6), zigzag
-  const idx = num - 1;
-  const row = Math.floor(idx / 6);
-  let col = idx % 6;
-  if (row % 2 === 1) col = 5 - col; // zigzag
-  const gridRow = 4 - row; // flip so row 0 is at bottom
-  return { row: gridRow, col };
-}
-
 function buildBoard() {
   const board = document.getElementById('board');
   board.innerHTML = '';
-  
   for (let r = 0; r < 5; r++) {
     for (let c = 0; c < 6; c++) {
-      // Convert grid position to cell number
       const boardRow = 4 - r;
       const col = boardRow % 2 === 0 ? c : 5 - c;
       const num = boardRow * 6 + col + 1;
-      
       const cell = document.createElement('div');
       cell.className = 'cell';
       cell.id = `cell-${num}`;
@@ -354,13 +287,11 @@ function buildBoard() {
       cell.style.aspectRatio = '1';
       cell.style.minHeight = '48px';
       cell.style.border = '2px solid rgba(0,0,0,0.08)';
-      
       let content = '';
       if (num === 1) content = '<span class="text-xs">🏁</span>';
       else if (num === 30) content = '<span class="text-xs">🏆</span>';
       else if (snakes[num]) content = '<span class="snake-icon">🐍</span>';
       else if (ladders[num]) content = '<span class="ladder-icon">🪜</span>';
-      
       cell.innerHTML = `<span class="cell-num">${num}</span>${content}`;
       board.appendChild(cell);
     }
@@ -368,9 +299,7 @@ function buildBoard() {
 }
 
 function placePions() {
-  // Remove existing pions
   document.querySelectorAll('.pion').forEach(p => p.remove());
-  
   players.forEach((p, i) => {
     const pion = document.createElement('div');
     pion.className = 'pion';
@@ -378,10 +307,8 @@ function placePions() {
     pion.style.background = p.color;
     pion.textContent = p.icon;
     pion.style.fontSize = '10px';
-    
     const cellEl = document.getElementById(`cell-${p.pos}`);
     if (cellEl) {
-      // Offset multiple pions on same cell
       const sameCell = players.filter((pp, ii) => ii < i && pp.pos === p.pos).length;
       pion.style.bottom = `${2 + sameCell * 8}px`;
       pion.style.right = `${2 + sameCell * 6}px`;
@@ -398,11 +325,7 @@ function updateScores() {
     div.className = `flex items-center gap-2 px-2 py-1 rounded-lg ${i === currentPlayerIdx ? 'ring-2' : ''}`;
     div.style.background = i === currentPlayerIdx ? p.bg : 'transparent';
     div.style.ringColor = p.color;
-    div.innerHTML = `
-      <span style="color:${p.color}" class="font-black text-sm">${p.icon}</span>
-      <span class="text-xs font-bold flex-1" style="color:${p.color}">${p.name}</span>
-      <span class="text-xs font-black">${p.score}</span>
-    `;
+    div.innerHTML = `<span style="color:${p.color}" class="font-black text-sm">${p.icon}</span><span class="text-xs font-bold flex-1" style="color:${p.color}">${p.name}</span><span class="text-xs font-black">${p.score}</span>`;
     list.appendChild(div);
   });
 }
@@ -414,18 +337,12 @@ function updateCurrentPlayer() {
 
 function startGame() {
   sfxStart();
-  players = [...selectedPlayers].sort().map(idx => ({
-    ...PLAYERS_DEF[idx],
-    pos: 1,
-    score: 0,
-  }));
+  players = [...selectedPlayers].sort().map(idx => ({ ...PLAYERS_DEF[idx], pos: 1, score: 0 }));
   currentPlayerIdx = 0;
   generateSnakesAndLadders();
   questions = shuffle([...ALL_QUESTIONS]);
-  
   document.getElementById('setup-screen').classList.add('hidden');
   document.getElementById('game-screen').classList.remove('hidden');
-  
   buildBoard();
   placePions();
   updateScores();
@@ -439,16 +356,12 @@ let questionIdx = 0;
 async function rollDice() {
   if (isAnimating) return;
   isAnimating = true;
-  
   const btn = document.getElementById('dice-btn');
   btn.disabled = true;
   btn.classList.add('dice-rolling');
-  try { sfxDice(); } catch(e) { console.log('sfx dice error:', e); }
-  
+  sfxDice();
   const result = Math.floor(Math.random() * 6) + 1;
   const diceEmojis = ['⚀','⚁','⚂','⚃','⚄','⚅'];
-  
-  // Animate dice
   let count = 0;
   const interval = setInterval(() => {
     btn.textContent = diceEmojis[Math.floor(Math.random() * 6)];
@@ -458,7 +371,7 @@ async function rollDice() {
       btn.textContent = diceEmojis[result - 1];
       btn.classList.remove('dice-rolling');
       document.getElementById('dice-result').textContent = `Angka: ${result}`;
-      setTimeout(() => movePlayer(result), 200);
+      movePlayer(result);
     }
   }, 80);
 }
@@ -466,133 +379,73 @@ async function rollDice() {
 async function movePlayer(steps) {
   const p = players[currentPlayerIdx];
   const target = Math.min(p.pos + steps, 30);
-  
   document.getElementById('info-text').textContent = `${p.icon} maju ${steps} langkah...`;
-  
-  // Step by step movement
   for (let i = p.pos + 1; i <= target; i++) {
     p.pos = i;
     placePions();
-    try { sfxMove(); } catch(e) { }
-    await delay(300);
+    sfxMove();
+    await delay(250);
   }
-  
-  // Check finish
-  if (p.pos >= 30) {
-    p.pos = 30;
-    placePions();
-    await delay(500);
-    finishGame();
-    return;
-  }
-  
-  // Check snake or ladder
+  if (p.pos >= 30) { p.pos = 30; placePions(); await delay(300); finishGame(); return; }
   if (snakes[p.pos]) {
-    await delay(300);
     document.getElementById('info-text').textContent = `🐍 Ular! Turun ke ${snakes[p.pos]}`;
-    try { sfxSnake(); } catch(e) { }
+    sfxSnake();
     const pion = document.getElementById(`pion-${currentPlayerIdx}`);
     if (pion) pion.style.animation = 'snake-eat 0.6s ease';
-    await delay(800);
+    await delay(700);
     p.pos = snakes[p.pos];
     placePions();
-    
-    // Check finish after snake
-    if (p.pos >= 30) {
-      p.pos = 30;
-      placePions();
-      await delay(500);
-      finishGame();
-      return;
-    }
   } else if (ladders[p.pos]) {
-    await delay(300);
     document.getElementById('info-text').textContent = `🪜 Tangga! Naik ke ${ladders[p.pos]}`;
-    try { sfxLadder(); } catch(e) { }
+    sfxLadder();
     const pion = document.getElementById(`pion-${currentPlayerIdx}`);
     if (pion) pion.style.animation = 'ladder-climb 0.6s ease';
-    await delay(800);
+    await delay(700);
     p.pos = ladders[p.pos];
     placePions();
-    
-    if (p.pos >= 30) {
-      p.pos = 30;
-      placePions();
-      await delay(500);
-      finishGame();
-      return;
-    }
+    if (p.pos >= 30) { p.pos = 30; placePions(); await delay(300); finishGame(); return; }
   }
-  
-  // Show question (not for cell 1)
-  await delay(600);
-  if (p.pos > 1) {
-    showQuestion();
-  } else {
-    nextTurn();
-  }
+  if (p.pos > 1) { await delay(300); showQuestion(); } else { nextTurn(); }
 }
 
 function showQuestion() {
-  if (questionIdx >= questions.length) {
-    questions = shuffle([...ALL_QUESTIONS]);
-    questionIdx = 0;
-  }
-  
-  const q = questions[questionIdx];
+  const q = questions[questionIdx % questions.length];
   questionIdx++;
-  
-  const qModal = document.getElementById('question-modal');
-  if (!qModal) return;
-  
   document.getElementById('q-text').textContent = q.q;
   const opts = document.getElementById('q-options');
-  if (!opts) return;
-  
   opts.innerHTML = '';
-  
   const labels = ['a', 'b', 'c'];
   q.o.forEach((opt, i) => {
     const btn = document.createElement('button');
-    btn.className = 'w-full py-2 px-4 rounded-xl font-bold text-left transition-all hover:scale-105 text-sm';
+    btn.className = 'w-full py-2 px-4 rounded-xl font-bold text-left transition-all hover:scale-102 text-sm';
     btn.style.background = ['#fef3c7', '#dbeafe', '#dcfce7'][i];
     btn.style.border = '2px solid ' + ['#fbbf24', '#60a5fa', '#4ade80'][i];
     btn.textContent = `${labels[i]}. ${opt}`;
     btn.onclick = () => answerQuestion(i, q.a);
     opts.appendChild(btn);
   });
-  
-  qModal.classList.remove('hidden');
+  document.getElementById('question-modal').classList.remove('hidden');
 }
 
 function answerQuestion(chosen, correct) {
   document.getElementById('question-modal').classList.add('hidden');
-  
   const p = players[currentPlayerIdx];
-  
   if (chosen === correct) {
     p.score += 10;
-    try { sfxCorrect(); } catch(e) { }
+    sfxCorrect();
     document.getElementById('result-icon').textContent = '🎉';
     document.getElementById('result-text').textContent = 'Benar!';
     document.getElementById('result-text').style.color = '#16a34a';
-    document.getElementById('result-sub').textContent = '+10 poin! 🌟';
+    document.getElementById('result-sub').textContent = '+10 poin!';
   } else {
-    try { sfxWrong(); } catch(e) { }
+    sfxWrong();
     document.getElementById('result-icon').textContent = '😢';
     document.getElementById('result-text').textContent = 'Salah!';
     document.getElementById('result-text').style.color = '#dc2626';
     document.getElementById('result-sub').textContent = 'Jawaban: ' + ['a','b','c'][correct];
   }
-  
-  // Force update scores after small delay
-  setTimeout(() => {
-    updateScores();
-    const resultModal = document.getElementById('result-modal');
-    if (resultModal) {
-      resultModal.classList.remove('hidden');
-    }
-  }, 100);
+  updateScores();
+  document.getElementById('result-modal').classList.remove('hidden');
 }
 
 function closeResult() {
@@ -611,13 +464,12 @@ function nextTurn() {
 }
 
 function finishGame() {
-  try { sfxWin(); } catch(e) { console.log('sfx win error:', e); }
+  sfxWin();
   const sorted = [...players].sort((a, b) => {
     if (a.pos === 30 && b.pos !== 30) return -1;
     if (b.pos === 30 && a.pos !== 30) return 1;
     return b.score - a.score;
   });
-  
   const container = document.getElementById('finish-scores');
   container.innerHTML = '';
   sorted.forEach((p, i) => {
@@ -625,16 +477,9 @@ function finishGame() {
     const div = document.createElement('div');
     div.className = 'flex items-center gap-2 py-2 px-3 rounded-lg mb-1';
     div.style.background = p.bg;
-    div.innerHTML = `
-      <span class="text-lg">${medals[i]}</span>
-      <span style="color:${p.color}" class="font-black">${p.icon} ${p.name}</span>
-      <span class="ml-auto font-black">${p.score} poin</span>
-      ${p.pos >= 30 ? '<span class="text-xs">🏆</span>' : ''}
-    `;
+    div.innerHTML = `<span class="text-lg">${medals[i]}</span><span style="color:${p.color}" class="font-black">${p.icon} ${p.name}</span><span class="ml-auto font-black">${p.score} poin</span>${p.pos >= 30 ? '<span class="text-xs">🏆</span>' : ''}`;
     container.appendChild(div);
   });
-  
-  // Confetti
   const cc = document.getElementById('confetti-container');
   cc.innerHTML = '';
   const colors = ['#ef4444','#3b82f6','#22c55e','#eab308','#ec4899','#8b5cf6'];
@@ -648,7 +493,6 @@ function finishGame() {
     piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
     cc.appendChild(piece);
   }
-  
   document.getElementById('finish-modal').classList.remove('hidden');
   isAnimating = false;
 }
@@ -672,8 +516,7 @@ function resetGame() {
 }
 
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
 lucide.createIcons();
 </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f5ea54002c2e791',t:'MTc3NzgwNDgwNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ </body>
 </html>
